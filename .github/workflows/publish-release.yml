@@ -22,11 +22,15 @@ jobs:
           notes_file="releases/${TAG_NAME}/RELEASE_NOTES.md"
           assets=(releases/${TAG_NAME}/AnswerSearchSetup-*)
           if gh release view "${TAG_NAME}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            release_id=$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${TAG_NAME}" --jq .id)
+            gh api -X PATCH "repos/${GITHUB_REPOSITORY}/releases/${release_id}" \
+              -f prerelease=false \
+              -f make_latest=true >/dev/null
             gh release upload "${TAG_NAME}" "${assets[@]}" --repo "${GITHUB_REPOSITORY}" --clobber
           else
             gh release create "${TAG_NAME}" "${assets[@]}" \
               --repo "${GITHUB_REPOSITORY}" \
               --title "AnswerSearch ${TAG_NAME#v}" \
               --notes-file "${notes_file}" \
-              --prerelease
+              --latest
           fi
