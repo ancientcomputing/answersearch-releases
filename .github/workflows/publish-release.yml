@@ -1,0 +1,32 @@
+﻿name: Publish GitHub Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Publish release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          notes_file="releases/${TAG_NAME}/RELEASE_NOTES.md"
+          assets=(releases/${TAG_NAME}/AnswerSearchSetup-*)
+          if gh release view "${TAG_NAME}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            gh release upload "${TAG_NAME}" "${assets[@]}" --repo "${GITHUB_REPOSITORY}" --clobber
+          else
+            gh release create "${TAG_NAME}" "${assets[@]}" \
+              --repo "${GITHUB_REPOSITORY}" \
+              --title "AnswerSearch ${TAG_NAME#v}" \
+              --notes-file "${notes_file}" \
+              --prerelease
+          fi
